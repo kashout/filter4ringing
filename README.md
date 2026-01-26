@@ -1,4 +1,4 @@
-# filter4TOFringing
+# filter4ringing
 
 Detector oscillations are intrinsic artefacts in time-of-flight mass spectrometry (TOF-MS) data and can produce spurious signals that impede data analysis. This Streamlit application uses a data-driven workflow to identify and remove these artefacts, thereby improving data quality.
 
