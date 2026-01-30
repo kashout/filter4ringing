@@ -30,12 +30,13 @@ st.image("images/workflow_figure.png")
 
 col1, col2, spacer = st.columns([1, 1, 3])
 with col1:
-    st.link_button("📄 Read more", "https://doi.org/")
+    st.link_button("📄 Read more", "https://doi.org/10.26434/chemrxiv.10001734/v1")
 with col2:
     with st.popover("📑 Cite Us"):
             st.markdown("""
-> K.J. Houthuijs, K.J. Jobst and F. Béen. Data-Driven Filter for Detector Oscillation Artefacts in Time-of-Flight Mass Spectrometry. _To be submitted._
-            """)
+> K.J. Houthuijs, K.J. Jobst and F. Béen. Data-Driven Filter for Detector Oscillation Artefacts in Time-of-Flight Mass Spectrometry. _ChemRxiv_. 29 January 2026.  
+  DOI: https://doi.org/10.26434/chemrxiv.10001734/v1
+""")
 
 st.sidebar.success("Select a page above to begin.")
 
