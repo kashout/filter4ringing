@@ -2,30 +2,30 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
 
-def plot_artefact_maxima(potential_df, drmz_conv, drmz_maxima, maxima_found, artefact_colors):
+def plot_artifact_maxima(potential_df, drmz_conv, drmz_maxima, maxima_found, artifact_colors):
     fig_res = make_subplots(rows=1, cols=2, shared_yaxes=True, column_widths=[0.7, 0.3])
     
     # Plot the clean signal
     fig_res.add_trace(go.Scatter(
-        x=potential_df[potential_df["artefact"] == "no"]["m/z"], 
-        y=potential_df[potential_df["artefact"] == "no"]["drmz"], 
+        x=potential_df[potential_df["artifact"] == "no"]["m/z"], 
+        y=potential_df[potential_df["artifact"] == "no"]["drmz"], 
         name="clustered features", 
         mode="markers",
         marker=dict(size=4, color="#BBB7B7", opacity=0.6),
     ), row=1, col=1)
 
     fig_res.add_trace(go.Scatter(
-        x=potential_df[potential_df["artefact"] == "precursor"]["m/z"], 
-        y=potential_df[potential_df["artefact"] == "precursor"]["drmz"], 
+        x=potential_df[potential_df["artifact"] == "precursor"]["m/z"], 
+        y=potential_df[potential_df["artifact"] == "precursor"]["drmz"], 
         name="clustered features", 
         mode="markers",
-        marker=dict(size=4, color=artefact_colors[0], opacity=0.6),
+        marker=dict(size=4, color=artifact_colors[0], opacity=0.6),
     ), row=1, col=1)
 
     if maxima_found:
         fig_res.add_trace(go.Scatter(
-                x=potential_df[potential_df["artefact"] == "outlier"]["m/z"], 
-                y=potential_df[potential_df["artefact"] == "outlier"]["drmz"], 
+                x=potential_df[potential_df["artifact"] == "outlier"]["m/z"], 
+                y=potential_df[potential_df["artifact"] == "outlier"]["drmz"], 
                 name="clustered features", 
                 mode="markers",
                 marker=dict(size=4, color="#BBB7B7", opacity=0.6),
@@ -33,16 +33,16 @@ def plot_artefact_maxima(potential_df, drmz_conv, drmz_maxima, maxima_found, art
         
         for i in range(drmz_maxima.shape[0]):
             fig_res.add_trace(go.Scatter(
-                x=potential_df[potential_df["artefact"] == f"{i+1}th ring".replace("1th", "1st").replace("2th", "2nd").replace("3th", "3rd")]["m/z"], 
-                y=potential_df[potential_df["artefact"] == f"{i+1}th ring".replace("1th", "1st").replace("2th", "2nd").replace("3th", "3rd")]["drmz"], 
+                x=potential_df[potential_df["artifact"] == f"{i+1}th ring".replace("1th", "1st").replace("2th", "2nd").replace("3th", "3rd")]["m/z"], 
+                y=potential_df[potential_df["artifact"] == f"{i+1}th ring".replace("1th", "1st").replace("2th", "2nd").replace("3th", "3rd")]["drmz"], 
                 name="clustered features", 
                 mode="markers",
-                marker=dict(size=4, color=artefact_colors[i+1], opacity=0.6),
+                marker=dict(size=4, color=artifact_colors[i+1], opacity=0.6),
             ), row=1, col=1)
     else:
         fig_res.add_trace(go.Scatter(
-            x=potential_df[potential_df["artefact"] == "yes"]["m/z"], 
-            y=potential_df[potential_df["artefact"] == "yes"]["drmz"], 
+            x=potential_df[potential_df["artifact"] == "yes"]["m/z"], 
+            y=potential_df[potential_df["artifact"] == "yes"]["drmz"], 
             name="clustered features", 
             mode="markers",
             marker=dict(size=4, color="#5F52DA", opacity=0.6),
@@ -66,7 +66,7 @@ def plot_artefact_maxima(potential_df, drmz_conv, drmz_maxima, maxima_found, art
                 y=[drmz_maxima[i, 0]],
                 name="maxima",
                 mode='markers',
-                marker=dict(size=8, color=artefact_colors[i+1], symbol="circle-open-dot"),
+                marker=dict(size=8, color=artifact_colors[i+1], symbol="circle-open-dot"),
             ), row=1, col=2)
 
     fig_res.update_xaxes(title_text="m/z", row=1, col=1)
@@ -76,7 +76,7 @@ def plot_artefact_maxima(potential_df, drmz_conv, drmz_maxima, maxima_found, art
     fig_res.update_layout(template="plotly_dark", showlegend=False, height=400, margin=dict(t=20, b=20))
     return fig_res
 
-def plot_tolerance_refinement(broad_df, artefacts, artefact_colors, ion_mobility_type, tolerances, tolerances_set):
+def plot_tolerance_refinement(broad_df, artifacts, artifact_colors, ion_mobility_type, tolerances, tolerances_set):
 
     if ion_mobility_type == "DT":
         im_value = "ddt"
@@ -91,9 +91,9 @@ def plot_tolerance_refinement(broad_df, artefacts, artefact_colors, ion_mobility
         "RT": {"value": "drt", "title": "retention time error", "xlabel": r"ΔRT (min.)"},
         ion_mobility_type: {"value": im_value, "title": im_title, "xlabel": im_xlabel},
         "drmz": {"value": "ddrmz", "title": r"Δ√(m/z) error", "xlabel": r"ΔΔ√(m/z)"},
-        "relative area": {"value": "rel_area", "title": "relative area", "xlabel": "relative peak area of artefact to precursor"},
+        "relative area": {"value": "rel_area", "title": "relative area", "xlabel": "relative peak area of artifact to precursor"},
         "precursor area": {"value": "Area", "title": "precursor area", "xlabel": "precursor peak area (a.u.)"},
-        "correlation": {"value": "corr", "title": "correlation", "xlabel": "correlation of artefact to precursor"},
+        "correlation": {"value": "corr", "title": "correlation", "xlabel": "correlation of artifact to precursor"},
         }
     if tolerances is not None:
         panels["RT"]["tol"] = tolerances["rt_tol"]
@@ -118,8 +118,8 @@ def plot_tolerance_refinement(broad_df, artefacts, artefact_colors, ion_mobility
         
         # define bars
         if p in ["RT", "DT", "drmz"]:
-            artefact_df = broad_df[~broad_df["artefact"].isin(["no", "precursor"])]
-            all_data = artefact_df[panels[p]["value"]].dropna().round(5)
+            artifact_df = broad_df[~broad_df["artifact"].isin(["no", "precursor"])]
+            all_data = artifact_df[panels[p]["value"]].dropna().round(5)
             min_step = min(all_data[all_data > 0].min(), -all_data[all_data < 0].max())
             if np.isnan(min_step): min_step = 0.0001
             n_bins = int(all_data.abs().max() / min_step) * 2 + 1
@@ -132,18 +132,18 @@ def plot_tolerance_refinement(broad_df, artefacts, artefact_colors, ion_mobility
         else:
             n_bins = 50
             if p in ["precursor area"]:
-                all_data = broad_df.loc[artefact_df["precursor"], panels[p]["value"]]
+                all_data = broad_df.loc[artifact_df["precursor"], panels[p]["value"]]
                 bins = np.logspace(np.log10(all_data.min()*0.99999999), np.log10(all_data.max()*1.00000001), num=n_bins + 1)
             else:
-                all_data = artefact_df[panels[p]["value"]].dropna().round(5)
+                all_data = artifact_df[panels[p]["value"]].dropna().round(5)
                 _, bins = np.histogram(all_data, bins=n_bins)
 
         # segment data into bars
-        for j, artefact in enumerate(artefacts):
+        for j, artifact in enumerate(artifacts):
             if p in ["precursor area"]:
-                data = broad_df.loc[artefact_df.loc[artefact_df["artefact"] == artefact, "precursor"], panels[p]["value"]]
+                data = broad_df.loc[artifact_df.loc[artifact_df["artifact"] == artifact, "precursor"], panels[p]["value"]]
             else:
-                data = artefact_df.loc[artefact_df["artefact"] == artefact, panels[p]["value"]].dropna().round(5)
+                data = artifact_df.loc[artifact_df["artifact"] == artifact, panels[p]["value"]].dropna().round(5)
             counts, _ = np.histogram(data, bins=bins)
 
             fig.add_trace(
@@ -152,9 +152,9 @@ def plot_tolerance_refinement(broad_df, artefacts, artefact_colors, ion_mobility
                     y=counts / counts.max(),
                     base=j * 1.2,
                     width=np.diff(bins),
-                    name=artefact.replace(" ring", ""),
-                    marker_color=artefact_colors[j],
-                    legendgroup=artefact.replace(" ring", ""), 
+                    name=artifact.replace(" ring", ""),
+                    marker_color=artifact_colors[j],
+                    legendgroup=artifact.replace(" ring", ""), 
                     showlegend=(i == 0),
                 ),
                 row=r, col=c
@@ -174,8 +174,8 @@ def plot_tolerance_refinement(broad_df, artefacts, artefact_colors, ion_mobility
                     row=r, col=c,
                 )
             elif p in ["drmz"]:
-                height = 1.2 * len(artefacts)
-                if "M+1" in artefacts:
+                height = 1.2 * len(artifacts)
+                if "M+1" in artifacts:
                     fig.add_shape(
                         type="rect",
                         x0=-panels[p]["tol"] + tolerances["iso_offset"], x1=panels[p]["tol"] + tolerances["iso_offset"],

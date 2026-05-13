@@ -122,7 +122,7 @@ if uploaded_file:
         # Users choose between DT or CCS based on your requirement
         ion_mobility_type = st.radio("Ion mobility metric", ["None", "DT", "CCS"], index=radio_index)
         if ion_mobility_type == "CCS":
-            st.warning("CCS is m/z dependent and therefore not recommended for ringing artefact filtering.")
+            st.warning("CCS is m/z dependent and therefore not recommended for ringing artifact filtering.")
         im_col = st.selectbox(f"Select {ion_mobility_type} column", ["None"] + remaining_cols, index=box_index) if ion_mobility_type != "None" else None
     
     fixed_cols = ['m/z']
@@ -223,7 +223,7 @@ if st.session_state.data_import_complete:
 
     col1, col2 = st.columns([1, 2.5])
     with col1:
-        st.markdown("This plot shows the raw Time-of-Flight data before artefact filtering.")
+        st.markdown("This plot shows the raw Time-of-Flight data before artifact filtering.")
         x_axis = st.selectbox("X-axis", options=feature_attributes + ["max_intensity"], index=0, help="Select the x-axis for the raw data plot.")
         y_axis = st.selectbox("Y-axis", options=feature_attributes + ["max_intensity"], index=len(feature_attributes), help="Select the y-axis for the raw data plot.")
 
@@ -245,7 +245,7 @@ if st.session_state.data_import_complete:
     st.divider()
 
     # --- SECTION 2: ALGORITHM CONFIGURATION ---
-    st.subheader(r"Strict artefact detection to find $\Delta \sqrt{m/z}$ values")
+    st.subheader(r"Strict artifact detection to find $\Delta \sqrt{m/z}$ values")
 
     st.write("Configure the parameters used for feature grouping.")
 
@@ -263,15 +263,15 @@ if st.session_state.data_import_complete:
             ion_mobility_type = "DT"
     with col2:
         min_intensity = st.select_slider("Minimum precursor intensity (a.u.)", options=[1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 5e-2, 1e-1, 5e-1, 1], value=1e-2, format_func=lambda x: f"{x:.0e}".replace("-0", "-"), help="Minimum intensity of precursor.")
-        max_rel_intensity = st.slider("Maximum relative intensity (%)", 0, 100, 10, step=1, format="%d%%", help="Maximum relative intensity of the artefact compared to the precursor.", key="max_rel_intensity") / 100
+        max_rel_intensity = st.slider("Maximum relative intensity (%)", 0, 100, 10, step=1, format="%d%%", help="Maximum relative intensity of the artifact compared to the precursor.", key="max_rel_intensity") / 100
     with col3:
-        min_correlation = st.slider("Minimum correlation", 0.0, 1.0, 0.9, step=0.01, help="Minimum correlation between precursor and artefact across samples.", disabled=peak_intensity_info.shape[1] < 3)
+        min_correlation = st.slider("Minimum correlation", 0.0, 1.0, 0.9, step=0.01, help="Minimum correlation between precursor and artifact across samples.", disabled=peak_intensity_info.shape[1] < 3)
 
     # Centralized Run Button
-    if st.button("🚀 Find potential artefacts", type="primary", use_container_width=True):
-        with st.spinner("Finding potential artefacts..."):
+    if st.button("🚀 Find potential artifacts", type="primary", use_container_width=True):
+        with st.spinner("Finding potential artifacts..."):
             # Run the algorithm
-            potential_df = rf.mark_potential_artefacts(
+            potential_df = rf.mark_potential_artifacts(
                 feature_info,
                 peak_intensity_info.T,
                 [],
@@ -284,7 +284,7 @@ if st.session_state.data_import_complete:
                 )
 
             drmz_conv, drmz_maxima = rf.find_drmz_maxima(
-                potential_df.loc[potential_df["artefact"] == "yes", "drmz"],
+                potential_df.loc[potential_df["artifact"] == "yes", "drmz"],
                 fwhm=2e-5,
                 min_height=3,
                 min_separation=1.5E-4,
@@ -327,13 +327,13 @@ if st.session_state.potential_run_complete:
     if st.button("🚀 Find maxima", type="primary", use_container_width=True):
         with st.spinner("Finding maxima..."):
             drmz_conv, drmz_maxima = rf.find_drmz_maxima(
-                potential_df.loc[potential_df["artefact"].isin(["no", "precursor"]) == False, "drmz"],
+                potential_df.loc[potential_df["artifact"].isin(["no", "precursor"]) == False, "drmz"],
                 fwhm=fwhm,
                 min_height=min_counts,
                 min_separation=min_separation,
                 )
             
-            potential_df, fit_parameters = rf.segment_artefacts(potential_df, drmz_maxima[:, 0],
+            potential_df, fit_parameters = rf.segment_artifacts(potential_df, drmz_maxima[:, 0],
                                                   drmz_tol=min_separation / 2,
                                                   confidence_interval=0.99,
                                                   max_iter=100)
@@ -349,16 +349,16 @@ if st.session_state.potential_run_complete:
             
         st.info(f"Maxima updated. Assigned {drmz_maxima.shape[0]} rings to the TOF-MS data.".replace("1 rings", "1 ring"))
     
-    artefact_colors = sns_deep_palette * (1 + drmz_maxima.shape[0] // len(sns_deep_palette))
+    artifact_colors = sns_deep_palette * (1 + drmz_maxima.shape[0] // len(sns_deep_palette))
     with plot_container:
-        fig = ui.plot_artefact_maxima(potential_df, drmz_conv, drmz_maxima, maxima_found=st.session_state.maxima_found, artefact_colors=artefact_colors)
+        fig = ui.plot_artifact_maxima(potential_df, drmz_conv, drmz_maxima, maxima_found=st.session_state.maxima_found, artifact_colors=artifact_colors)
         st.plotly_chart(fig, width="content", key="maxima_plot")
 
 st.divider()
 
 # --- SECTION 3: ALGORITHM CONFIGURATION ---
 if st.session_state.maxima_found:
-    st.subheader(r"Broad artefact detection to refine all parameters")
+    st.subheader(r"Broad artifact detection to refine all parameters")
 
     st.write("Reconfigure the parameters used for broader feature grouping.")
 
@@ -376,17 +376,17 @@ if st.session_state.maxima_found:
             value=1e-4,
             format_func=lambda x: f"{x:.1e}".replace("-0", "-").replace("+0", "+"),
             help="Minimum intensity of precursor.", key="min_intensity_broad")
-        max_rel_intensity_broad = st.slider("Maximum relative intensity (%)", 0, 100, 15, step=1, format="%d%%", help="Maximum relative intensity of the artefact compared to the precursor.", key="max_rel_intensity_broad") / 100
+        max_rel_intensity_broad = st.slider("Maximum relative intensity (%)", 0, 100, 15, step=1, format="%d%%", help="Maximum relative intensity of the artifact compared to the precursor.", key="max_rel_intensity_broad") / 100
     with col3:
-        min_correlation_broad = st.slider("Minimum correlation", 0.0, 1.0, 0.2, step=0.01, help="Minimum correlation between precursor and artefact across samples.", key="min_correlation_broad", disabled=peak_intensity_info.shape[1] < 3)
+        min_correlation_broad = st.slider("Minimum correlation", 0.0, 1.0, 0.2, step=0.01, help="Minimum correlation between precursor and artifact across samples.", key="min_correlation_broad", disabled=peak_intensity_info.shape[1] < 3)
         drmz_tol_broad = st.slider(r"$\Delta \sqrt{m/z}$ tolerance", 0.0, 50e-5, 15e-5, step=2.5e-5, format="%.1e", help="Tolerance for Δ√(m/z) values.", key="drmz_tol_broad")
     
-    if st.button("🚀 Run broad artefact detection", type="primary", use_container_width=True, key="broad_run_button"):
-        with st.spinner("Running broad artefact detection..."):
+    if st.button("🚀 Run broad artifact detection", type="primary", use_container_width=True, key="broad_run_button"):
+        with st.spinner("Running broad artifact detection..."):
             drmz_maxima = st.session_state['drmz_maxima']
 
             # Re-run the algorithm with broad parameters
-            broad_df = rf.mark_artefacts(
+            broad_df = rf.mark_artifacts(
                 feature_info,
                 drmz_maxima[:, 0],
                 peak_intensity_info.T,
@@ -404,7 +404,7 @@ if st.session_state.maxima_found:
             st.session_state.broad_run_complete = True
             st.session_state.tolerances_set = False
             st.session_state.refined_run_complete = False
-            st.success("Broad artefact detection run complete.")
+            st.success("Broad artifact detection run complete.")
 
 if st.session_state.broad_run_complete == True:
 
@@ -427,8 +427,8 @@ if st.session_state.broad_run_complete == True:
             options=np.append(np.ravel(np.outer(np.array([1.0, 2.5, 5, 7.5]), np.power(10.0, np.array([-5, -4, -3, -2, -1]))), order="F"), 1.0),
             value=1e-3, format_func=lambda x: f"{x:.1e}".replace("-0", "-").replace("+0", "+"),
             help="Minimum intensity of precursor.", key="min_intensity_refined")
-        max_rel_intensity_refined = st.slider("Maximum relative intensity (%)", 0, 100, 5, step=1, format="%d%%", help="Maximum relative intensity for artefact consideration.", key="max_rel_intensity_refined") / 100
-        min_correlation_refined = st.slider("Minimum correlation", 0.0, 1.0, 0.5, step=0.01, help="Minimum correlation between precursor and artefact across samples.", key="min_correlation_refined", disabled=peak_intensity_info.shape[1] < 3)
+        max_rel_intensity_refined = st.slider("Maximum relative intensity (%)", 0, 100, 5, step=1, format="%d%%", help="Maximum relative intensity for artifact consideration.", key="max_rel_intensity_refined") / 100
+        min_correlation_refined = st.slider("Minimum correlation", 0.0, 1.0, 0.5, step=0.01, help="Minimum correlation between precursor and artifact across samples.", key="min_correlation_refined", disabled=peak_intensity_info.shape[1] < 3)
         refined_tols = {
             "rt_tol": rt_tol_refined,
             "im_tol": im_tol_refined,
@@ -443,12 +443,12 @@ if st.session_state.broad_run_complete == True:
             st.session_state['refined_tols'] = refined_tols
             st.session_state.refined_run_complete = False
     
-    if st.button("🚀 Run refined artefact detection", type="primary", use_container_width=True, disabled=not st.session_state.tolerances_set):
-        with st.spinner("Running artefact detection..."):
+    if st.button("🚀 Run refined artifact detection", type="primary", use_container_width=True, disabled=not st.session_state.tolerances_set):
+        with st.spinner("Running artifact detection..."):
             drmz_maxima = st.session_state['drmz_maxima']
 
             # Re-run the algorithm with broad parameters
-            refined_df = rf.mark_artefacts(
+            refined_df = rf.mark_artifacts(
                 feature_info,
                 drmz_maxima[:, 0],
                 peak_intensity_info.T,
@@ -468,15 +468,15 @@ if st.session_state.broad_run_complete == True:
 
     with tol_plot_container:
         broad_df = st.session_state['broad_df']
-        artefacts = [f"{i+1}th ring".replace("1th", "1st").replace("2th", "2nd").replace("3th", "3rd") for i in range(st.session_state['drmz_maxima'].shape[0])]
-        artefact_colors = sns_deep_palette[1:len(artefacts)+1] + ["#FFFFFF"]
-        if "M+1" in broad_df["artefact"].unique():
-            artefacts += ["M+1"]
+        artifacts = [f"{i+1}th ring".replace("1th", "1st").replace("2th", "2nd").replace("3th", "3rd") for i in range(st.session_state['drmz_maxima'].shape[0])]
+        artifact_colors = sns_deep_palette[1:len(artifacts)+1] + ["#FFFFFF"]
+        if "M+1" in broad_df["artifact"].unique():
+            artifacts += ["M+1"]
 
         fig = ui.plot_tolerance_refinement(
             broad_df=broad_df,
-            artefacts=artefacts,
-            artefact_colors=artefact_colors,
+            artifacts=artifacts,
+            artifact_colors=artifact_colors,
             ion_mobility_type=ion_mobility_type,
             tolerances=st.session_state['refined_tols'] if st.session_state.tolerances_set else None,
             tolerances_set=st.session_state.tolerances_set,
@@ -489,8 +489,8 @@ if st.session_state.refined_run_complete == True:
     feature_info = st.session_state['feature_info']
     peak_intensity_info = st.session_state['peak_intensity_info']
 
-    export_df = feature_info[feature_attributes].join(refined_df[["artefact", "precursor"]]).join(peak_intensity_info)
-    st.success("Artefact detection complete! You can now view and export the filtered feature table below.")
+    export_df = feature_info[feature_attributes].join(refined_df[["artifact", "precursor"]]).join(peak_intensity_info)
+    st.success("Artifact detection complete! You can now view and export the filtered feature table below.")
     st.download_button(
         label="🚀 Download Filtered Data",
         data=export_df.to_csv().encode('utf-8'),

@@ -1,6 +1,6 @@
 import streamlit as st
 
-st.title("Data-Driven Filter for Detector Oscillation Artefacts in Time-of-Flight Mass Spectrometry")
+st.title("Data-Driven Filter for Detector Oscillation Artifacts in Time-of-Flight Mass Spectrometry")
 
 # Authors & Affiliations
 st.markdown("""
@@ -13,30 +13,28 @@ Kas J. Houthuijs¹, Karl J. Jobst², Frederic Béen¹,³
 st.divider()
 
 st.markdown("""
-Detector oscillations are intrinsic artefacts in time-of-flight mass spectrometry (TOF-MS) data and
+Detector oscillations are intrinsic artifacts in time-of-flight mass spectrometry (TOF-MS) data and
 can produce spurious signals that impede data analysis. This Streamlit application uses a data-driven
-workflow to identify and remove these artefacts, thereby improving data quality.
+workflow to identify and remove these artifacts, thereby improving data quality.
 
 The workflow relies on a five-stage approach:
 
 1. **Strict grouping**: Identify feature pairs using strict co-elution, correlation and intensity criteria
-2. **Maxima finding**: Apply Gaussian convolution to find recurring Δ√(m/z) values representing ringing artefacts
+2. **Maxima finding**: Apply Gaussian convolution to find recurring Δ√(m/z) values representing ringing artifacts
 3. **Broad detection**: Use Δ√(m/z) values and broadened criteria to prevent fasle-negatives
 4. **Criteria refinement**: Refine selection criteria to minimize false-positive annotations
-5. **Refined filtering**: Re-processes data with refined parameters to accurately annotate and filter artefacts
+5. **Refined filtering**: Re-processes data with refined parameters to accurately annotate and filter artifacts
 """)
 
 st.image("images/workflow_figure.png")
 
 col1, col2, spacer = st.columns([1, 1, 3])
 with col1:
-    st.link_button("📄 Read more", "https://doi.org/10.26434/chemrxiv.10001734/v1")
+    st.link_button("📄 Read more", "https://doi.org/10.1021/acs.analchem.6c00762")
 with col2:
     with st.popover("📑 Cite Us"):
             st.markdown("""
-> K.J. Houthuijs, K.J. Jobst and F. Béen. Data-Driven Filter for Detector Oscillation Artefacts in Time-of-Flight Mass Spectrometry. _ChemRxiv_. 29 January 2026.  
-  DOI: https://doi.org/10.26434/chemrxiv.10001734/v1
-""")
+> Houthuijs, K.J.; Jobst, K.J.; Béen, F. Data-Driven Filter for Detector Oscillation Artifacts in Time-of-Flight Mass Spectrometry. _Anal. Chem._ **2026**, XX, XX-XX. https://doi.org/10.1021/acs.analchem.6c00762""")
 
 st.sidebar.success("Select a page above to begin.")
 

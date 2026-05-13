@@ -11,12 +11,12 @@ def load_demo_dataset(file_path="demo_data.csv"):
     df = pd.read_csv(file_path, index_col=0)
     return df
 
-def segment_artefacts(df, drmz_maxima, drmz_tol=1.5E-4, confidence_interval=0.99, max_iter=100):
-    df.loc[(df["artefact"] != "no") & (df["artefact"] != "precursor"), "artefact"] = "outlier"
+def segment_artifacts(df, drmz_maxima, drmz_tol=1.5E-4, confidence_interval=0.99, max_iter=100):
+    df.loc[(df["artifact"] != "no") & (df["artifact"] != "precursor"), "artifact"] = "outlier"
     fit_parameters = {}
     print(f"\nring counts    drmz ddrmz std ppm std")
     #print(f"------------------------------------")
-    n_artefacts = 0
+    n_artifacts = 0
     total_ppm = []
     for ring_number, drmz_maximum in enumerate(drmz_maxima):
         label = f"{ring_number + 1}th ring".replace("1th", "1st").replace("2th", "2nd").replace("3th", "3rd")
@@ -34,7 +34,7 @@ def segment_artefacts(df, drmz_maxima, drmz_tol=1.5E-4, confidence_interval=0.99
             i += 1
             if i == max_iter:
                 print("Max iter reached. Probably not good.")
-        df.loc[df_selected.index, "artefact"] = label
+        df.loc[df_selected.index, "artifact"] = label
         drmz_mean = df_selected.mean()
         drmz_std = df_selected.std()
         fit_parameters[label] = {"mean": drmz_mean, "std": drmz_std}
@@ -44,21 +44,21 @@ def segment_artefacts(df, drmz_maxima, drmz_tol=1.5E-4, confidence_interval=0.99
         ppm = ddmz / df_selected["m/z"] * 1E6
         
         print(f"{'r' + str(ring_number + 1):>3} {len(df_selected):>7} {drmz_mean:.5f} {drmz_std:.7f} {ppm.std():>7.2f}")# {n_outliers:>2}")
-        n_artefacts += len(df_selected)
+        n_artifacts += len(df_selected)
         total_ppm.append(ppm)
 
-    print(f"total {n_artefacts:>5}                   {pd.concat(total_ppm).std():>7.2f}")# {n_outliers:>2}")
-    print(f"from {df[df['artefact'] == 'precursor'].shape[0]} precursors")
+    print(f"total {n_artifacts:>5}                   {pd.concat(total_ppm).std():>7.2f}")# {n_outliers:>2}")
+    print(f"from {df[df['artifact'] == 'precursor'].shape[0]} precursors")
 
     # do some checking of isotope numbers.
     if "Isotope Distribution" in df.columns:
         df["num_isotopes"] = df["Isotope Distribution"].apply(count_isotopes)
-        isotopic_artefacts = 0
+        isotopic_artifacts = 0
         for i in range(len(drmz_maxima)):
-            temp_df = df[df["artefact"] == f"{i+1}th ring".replace("1th", "1st").replace("2th", "2nd").replace("3th", "3rd")]
-            isotopic_artefacts += temp_df["num_isotopes"].sum()
+            temp_df = df[df["artifact"] == f"{i+1}th ring".replace("1th", "1st").replace("2th", "2nd").replace("3th", "3rd")]
+            isotopic_artifacts += temp_df["num_isotopes"].sum()
     
-        print(f"total isotopic artefacts: {isotopic_artefacts}")
+        print(f"total isotopic artifacts: {isotopic_artifacts}")
     print("")
     return df, fit_parameters
 
@@ -130,8 +130,8 @@ def compare_features(i, j, arrays, results, params, drmz, im_mode="DT", do_iso=F
                     
                     # 2. Assign labels to results
                     results['precursor'][j] = arrays['features'][i]
-                    results['artefact'][j] = label # Even isotopes get "1st ring" etc. temporarily
-                    results['artefact'][i] = "precursor"
+                    results['artifact'][j] = label # Even isotopes get "1st ring" etc. temporarily
+                    results['artifact'][i] = "precursor"
 
                     if do_iso:
                         # This flag is what we use to distinguish Loop 2 results from Loop 1
@@ -160,7 +160,7 @@ def compare_features(i, j, arrays, results, params, drmz, im_mode="DT", do_iso=F
                     return True
     return False
 
-def mark_artefacts(df, fitted_means, peak_data, rt_tol=0.02, im_tol=0.3, im_mode="DT",
+def mark_artifacts(df, fitted_means, peak_data, rt_tol=0.02, im_tol=0.3, im_mode="DT",
                         min_area=10, max_rel_area=0.2, min_corr=0.2, drmz_tol=0.015, iso_offset=0):
     
     if "Feature" not in df.columns:
@@ -204,7 +204,7 @@ def mark_artefacts(df, fitted_means, peak_data, rt_tol=0.02, im_tol=0.3, im_mode
     }
 
     res_dict = {
-        'artefact': np.array(["no"] * len(df), dtype='object'),
+        'artifact': np.array(["no"] * len(df), dtype='object'),
         'precursor': np.array([""] * len(df), dtype='object'),
         'drmz': np.zeros(len(df)), 'dmz': np.zeros(len(df)),
         'ddrmz': np.zeros(len(df)), 'drt': np.zeros(len(df)), 'dccs': np.zeros(len(df)),
@@ -213,27 +213,27 @@ def mark_artefacts(df, fitted_means, peak_data, rt_tol=0.02, im_tol=0.3, im_mode
         'ppm': np.zeros(len(df)), 'ppm_iso': np.zeros(len(df))
     }
 
-    # --- LOOP 1: Standard Artefacts ---
+    # --- LOOP 1: Standard Artifacts ---
     t0 = time.time()
     for i in range(len(df) - 1):
-        if arrays['area'][i] <= min_area or res_dict['artefact'][i] != "no":
+        if arrays['area'][i] <= min_area or res_dict['artifact'][i] != "no":
             continue
         j_start = np.searchsorted(rmz_vals, rmz_vals[i] + (fitted_means[0] - drmz_tol[0]))
         j_end = np.searchsorted(rmz_vals, rmz_vals[i] + (fitted_means[-1] + drmz_tol[-1]), side='right')
         for j in range(j_start, j_end):
-            if i == j or res_dict['artefact'][j] != "no": continue
+            if i == j or res_dict['artifact'][j] != "no": continue
             drmz = rmz_vals[j] - rmz_vals[i]
             compare_features(i, j, arrays, res_dict, params, drmz, im_mode=im_mode, do_iso=False)
     t1 = time.time()
 
-    # --- LOOP 2: M+1 Isotope Artefacts ---
-    precursor_idx = np.where(res_dict['artefact'] == "precursor")[0]
+    # --- LOOP 2: M+1 Isotope Artifacts ---
+    precursor_idx = np.where(res_dict['artifact'] == "precursor")[0]
     for i in precursor_idx:
         rmz_iso = np.sqrt(arrays['mz'][i] + C_SPACING)
         j_start = np.searchsorted(rmz_vals, rmz_iso + (fitted_means[0] - drmz_tol[0] + iso_offset))
         j_end = np.searchsorted(rmz_vals, rmz_iso + (fitted_means[-1] + drmz_tol[-1] + iso_offset), side='right')
         for j in range(j_start, j_end):
-            if i == j or res_dict['artefact'][j] != "no": continue
+            if i == j or res_dict['artifact'][j] != "no": continue
             drmz = rmz_vals[j] - rmz_iso
             compare_features(i, j, arrays, res_dict, params, drmz, im_mode=im_mode, do_iso=True)
     t2 = time.time()
@@ -241,51 +241,51 @@ def mark_artefacts(df, fitted_means, peak_data, rt_tol=0.02, im_tol=0.3, im_mode
     # Map results to DataFrame
     for key, val in res_dict.items(): df[key] = val
     
-    # Identify which artefacts were created in Loop 2 (M+1 search)
+    # Identify which artifacts were created in Loop 2 (M+1 search)
     iso_mask = df["dmz_iso"] != 0.0
     iso_df = df[iso_mask].copy()
 
     # --- UPDATED PRINTING LOGIC ---
-    print(f"Time taken to mark artefacts: {t1 - t0:.3f} s")
+    print(f"Time taken to mark artifacts: {t1 - t0:.3f} s")
     print(f"Time taken to mark deviating isotopes: {t2 - t1:.3f} s")
 
     num_m1 = iso_df.shape[0]
-    num_precursors = df[df['artefact'] == 'precursor'].shape[0]
-    # Total artefacts excluding precursors
-    num_artefacts = df[~df['artefact'].isin(['no', 'precursor'])].shape[0]
+    num_precursors = df[df['artifact'] == 'precursor'].shape[0]
+    # Total artifacts excluding precursors
+    num_artifacts = df[~df['artifact'].isin(['no', 'precursor'])].shape[0]
 
-    print(f"{num_artefacts} artefacts (of which {num_m1} are M+1 isotopes) from {num_precursors} precursors")
-    print(f"Artefacts are {round(num_artefacts / df.shape[0] * 100, 1)}% of total features ({df.shape[0]})")
+    print(f"{num_artifacts} artifacts (of which {num_m1} are M+1 isotopes) from {num_precursors} precursors")
+    print(f"Artifacts are {round(num_artifacts / df.shape[0] * 100, 1)}% of total features ({df.shape[0]})")
 
-    # Table 1: Standard Artefact Stats (Excluding M+1 from standard ring stats)
+    # Table 1: Standard Artifact Stats (Excluding M+1 from standard ring stats)
     print(f"\ncat    drmz counts ddrmz std ppm std")
     print(f"tot       - {df.shape[0]:>6}         -       -")
     print(f"pre       - {num_precursors:>6}         -       -")
 
     for i, mean in enumerate(fitted_means):
         label = f"{i+1}th ring".replace("1th", "1st").replace("2th", "2nd").replace("3th", "3rd")
-        # EXCLUSION: Filter for the label BUT ensure it's NOT an M+1 artefact
-        temp_df = df[(df["artefact"] == label) & (~iso_mask)]
+        # EXCLUSION: Filter for the label BUT ensure it's NOT an M+1 artifact
+        temp_df = df[(df["artifact"] == label) & (~iso_mask)]
         print(f"{'r' + str(i+1):>3} {mean:>7.5f} {temp_df.shape[0]:>6} {temp_df['drmz'].std():>8.7f} {temp_df['ppm'].std():>7.2f}")
     
     print(f"M+1       - {num_m1:>6}         - {iso_df['ppm_iso'].std():>7.2f}\n")
 
-    # Table 2: Isotope-Specific Artefact Stats (Only M+1 loop results)
+    # Table 2: Isotope-Specific Artifact Stats (Only M+1 loop results)
     print(f"cat    drmz counts ddrmz std ppm std")
     for i, mean in enumerate(fitted_means):
         label = f"{i+1}th ring".replace("1th", "1st").replace("2th", "2nd").replace("3th", "3rd")
-        temp_iso_df = iso_df[iso_df["artefact"] == label]
+        temp_iso_df = iso_df[iso_df["artifact"] == label]
         print(f"{'r' + str(i+1):>3} {mean:>7.5f} {temp_iso_df.shape[0]:>6} {temp_iso_df['drmz'].std():>8.7f} {temp_iso_df['ppm'].std():>7.2f}")
 
     if "Isotope Distribution" in df.columns:
         df["num_isotopes"] = df["Isotope Distribution"].apply(count_isotopes)
-        # Sum only standard artefacts found in Loop 1
-        std_artefact_df = df[(~df['artefact'].isin(['no', 'precursor'])) & (~iso_mask)]
-        isotopic_artefacts = std_artefact_df["num_isotopes"].sum()
-        print(f"total isotopic artefacts: {int(isotopic_artefacts)}\n")
+        # Sum only standard artifacts found in Loop 1
+        std_artifact_df = df[(~df['artifact'].isin(['no', 'precursor'])) & (~iso_mask)]
+        isotopic_artifacts = std_artifact_df["num_isotopes"].sum()
+        print(f"total isotopic artifacts: {int(isotopic_artifacts)}\n")
 
     # Set label to M+1 for the returned dataframe
-    df.loc[iso_mask, "artefact"] = "M+1"
+    df.loc[iso_mask, "artifact"] = "M+1"
 
     df = df.set_index("Feature")
     return df.loc[ordered_features]
@@ -294,7 +294,7 @@ import numpy as np
 import pandas as pd
 import time
 
-def mark_potential_artefacts(df, peak_data, fitted_means=None, rt_tol=0.05, 
+def mark_potential_artifacts(df, peak_data, fitted_means=None, rt_tol=0.05, 
                                  im_tol=0.3, im_mode="DT", min_area=1e-4, max_rel_area=0.1, min_corr=0.9, 
                                  drmz_min=0.0001, drmz_max=0.02, iso_offset=0):
     
@@ -344,7 +344,7 @@ def mark_potential_artefacts(df, peak_data, fitted_means=None, rt_tol=0.05,
     }
 
     res_dict = {
-        'artefact': np.array(["no"] * len(df), dtype='object'),
+        'artifact': np.array(["no"] * len(df), dtype='object'),
         'precursor': np.array([""] * len(df), dtype='object'),
         'drmz': np.zeros(len(df)), 'dmz': np.zeros(len(df)),
         'ddrmz': np.zeros(len(df)), 'drt': np.zeros(len(df)), 'dccs': np.zeros(len(df)),
@@ -356,14 +356,14 @@ def mark_potential_artefacts(df, peak_data, fitted_means=None, rt_tol=0.05,
     t0 = time.time()
     n_features = len(df)
     for i in range(n_features - 1):
-        if arrays['area'][i] <= min_area or res_dict['artefact'][i] != "no":
+        if arrays['area'][i] <= min_area or res_dict['artifact'][i] != "no":
             continue
         
         j_start = np.searchsorted(rmz_vals, rmz_vals[i] + drmz_min)
         j_end = np.searchsorted(rmz_vals, rmz_vals[i] + drmz_max, side='right')
         
         for j in range(j_start, j_end):
-            if i == j or res_dict['artefact'][j] != "no":
+            if i == j or res_dict['artifact'][j] != "no":
                 continue
             drmz = rmz_vals[j] - rmz_vals[i]
             compare_features(i, j, arrays, res_dict, params, drmz, im_mode=im_mode, do_iso=False)
@@ -375,18 +375,18 @@ def mark_potential_artefacts(df, peak_data, fitted_means=None, rt_tol=0.05,
         df[key] = val
 
     # --- ORIGINAL PRINTING LOGIC ---
-    print(f"Time taken to mark potential artefacts: {t1 - t0:.3f} s")
+    print(f"Time taken to mark potential artifacts: {t1 - t0:.3f} s")
     
-    num_precursors = df[df['artefact'] == 'precursor'].shape[0]
-    num_artefacts = df[~df['artefact'].isin(['no', 'precursor'])].shape[0]
+    num_precursors = df[df['artifact'] == 'precursor'].shape[0]
+    num_artifacts = df[~df['artifact'].isin(['no', 'precursor'])].shape[0]
 
-    print(f"{num_artefacts} artefacts from {num_precursors} precursors")
-    print(f"Artefacts are {round(num_artefacts / df.shape[0] * 100, 1)}% of total features ({df.shape[0]})")
+    print(f"{num_artifacts} artifacts from {num_precursors} precursors")
+    print(f"Artifacts are {round(num_artifacts / df.shape[0] * 100, 1)}% of total features ({df.shape[0]})")
 
     if "Isotope Distribution" in df.columns:
         df["num_isotopes"] = df["Isotope Distribution"].apply(count_isotopes)
-        isotopic_artefacts = df[~df['artefact'].isin(['no', 'precursor'])]["num_isotopes"].sum()
-        print(f"total isotopic artefacts: {int(isotopic_artefacts)}")
+        isotopic_artifacts = df[~df['artifact'].isin(['no', 'precursor'])]["num_isotopes"].sum()
+        print(f"total isotopic artifacts: {int(isotopic_artifacts)}")
 
     df = df.set_index("Feature")
     return df.loc[ordered_features]
